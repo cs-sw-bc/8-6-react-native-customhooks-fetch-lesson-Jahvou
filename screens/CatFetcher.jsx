@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { View, Text, Image, Button, ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function CatFetcher() {
-  const [cat, setCat] = useState(null);
+  const [cat, setCat] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const CAT_API_KEY = process.env.CAT_API_KEY;
 
   useEffect(() => {
     fetchCat();
@@ -19,7 +20,26 @@ export default function CatFetcher() {
   // Catch any errors and store in error state.
   // ============================================================
   const fetchCat = async () => {
-
+    const headers = new Headers({
+      "Content-Type":"applicatiom/json",
+      "x-api-key": CAT_API_KEY
+    });
+    var requestOptions = {
+      method: 'GET',
+      headers: headers,
+      redirect: 'follow'
+    };
+    fetch("https://api.thecatapi.com/v1/images/search?size=med&mime_types=jpg&format=json&has_breeds=true&order=RANDOM&page=0&limit=1", requestOptions)
+    .then(response=> response.json())
+    .then(result=> {
+      setCat(result?.[0]);
+      setLoading(false);
+      console.log(result[0]);
+    })
+    .catch(error=> {
+      console.log('error', error);
+      setError(error);
+    });
   };
 
   // ============================================================
@@ -30,16 +50,22 @@ export default function CatFetcher() {
   // - If cat, return the Image using cat.url
   // ============================================================
 
+  if(loading){
+    return(<ActivityIndicator size="large"/>);
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Random Cat 🐱</Text>
 
       {/* TODO 4: render loading, error, or image here */}
+      <Image source={{uri:cat.url}}
+      style={{width:300,height:300}}></Image>
 
       <Text style={styles.id}>ID: {cat?.id}</Text>
 
       {/* TODO 5: Add a Button that calls fetchCat to load a new cat */}
-
+      <Button title='Get New Cat !' onPress={fetchCat}></Button>  //valid
     </View>
   );
 }

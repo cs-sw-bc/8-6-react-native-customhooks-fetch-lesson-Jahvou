@@ -4,12 +4,13 @@ import {
   FlatList, ActivityIndicator, StyleSheet
 } from 'react-native';
 
-const API_KEY = 'YOUR_API_KEY';
+const CAT_API_KEY =process.env.CAT_API_KEY;
 
 export default function CatVoter() {
   const [cat, setCat] = useState(null);
   const [votes, setVotes] = useState([]);
-  const [loading, setLoading] = useState(false);//change to True first
+  const [loading, setLoading] = useState(true);//change to True first
+   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchCat();
@@ -24,6 +25,27 @@ export default function CatVoter() {
   // Set loading to false when done.
   // ============================================================
   const fetchCat = async () => {
+    setLoading(true);
+      const headers = new Headers({
+      "Content-Type":"applicatiom/json",
+      "x-api-key": CAT_API_KEY
+    });
+    var requestOptions = {
+      method: 'GET',
+      headers: headers,
+      redirect: 'follow'
+    };
+    fetch("https://api.thecatapi.com/v1/images/search?size=med&mime_types=jpg&format=json&has_breeds=true&order=RANDOM&page=0&limit=1", requestOptions)
+    .then(response=> response.json())
+    .then(result=> {
+      setCat(result?.[0]);
+      setLoading(false);
+      console.log(result[0]);
+    })
+    .catch(error=> {
+      console.log('error', error);
+      setError(error);
+    });
     
   };
 
@@ -35,6 +57,29 @@ export default function CatVoter() {
   // Store the result in votes state.
   // ============================================================
   const fetchVotes = async () => {
+  setLoading(true);
+      const headers = new Headers({
+      "Content-Type":"applicatiom/json",
+      "x-api-key": "live_jdbNoPM2sVL5pxr9bJWSSOoqnJxjS5duFJNjo75RCH6WLyxnbBOXjDO7KrJp8JV2"
+    });
+
+    var requestOptions = {
+      method: 'GET',
+      headers: headers,
+      redirect: 'follow'
+    }
+
+     fetch("https://api.thecatapi.com/v1/votes", requestOptions)
+    .then(response=> response.json())
+    .then(result=> {
+      setVotes(result);
+      setLoading(false);
+      console.log(result[0]);
+    })
+    .catch(error=> {
+      console.log('error', error);
+      setError(error);
+    });
 
   };
 
@@ -47,7 +92,27 @@ export default function CatVoter() {
   // After posting, call fetchVotes() to refresh the list.
   // ============================================================
   const submitVote = async (value) => {
+    const headers = new Headers({
+      "Content-Type":"application/json",
+      "x-api-key": "live_jdbNoPM2sVL5pxr9bJWSSOoqnJxjS5duFJNjo75RCH6WLyxnbBOXjDO7KrJp8JV2"
+    });
 
+    var payload = {
+      image_id: cat.id,
+      value: value
+    }
+
+    fetch('https://api.thecatapi.com/v1/votes',{
+      method:"POST",
+      headers: headers,
+      body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(result=>{
+      console.log(result);
+      fetchVotes();
+    })
+    .catch(error => setError(error))
   };
 
   if (loading) return <ActivityIndicator size="large" style={styles.center} />;
@@ -57,11 +122,14 @@ export default function CatVoter() {
       <Text style={styles.heading}>Cat Voter 🐱</Text>
 
       {/* TODO 9: Render the cat image using cat.url */}
+      <Image source={{uri:cat.url}} style={{width:300,height:300}}/>
 
 
       {/* TODO 10: Add two buttons — Upvote (value 1) and Downvote (value 0) */}
-      <View style={styles.buttons}>
 
+      <View style={styles.buttons}>
+         <Button title='Upvote' onPress={()=>{submitVote(1)}}></Button>
+        <Button title='Downvote' onPress={()=>{submitVote(0)}}></Button>
       </View>
 
       <Button title="New Cat 🔄" onPress={fetchCat} />
@@ -70,6 +138,17 @@ export default function CatVoter() {
       {/* Each row: show 👍 or 👎 based on item.value, and item.image_id */}
       {/* ListEmptyComponent: show "No votes yet" */}
       <Text style={styles.historyHeading}>Vote History ({votes.length})</Text>
+      <FlatList data={votes} 
+      keyExtractor={(item)=>item.id}
+      renderItem={({item})=>{
+        return (
+        <Text>
+            Image ID : {item.image_id}
+            Value : {item.value == 1 ? '👍':'👎'}
+        </Text>)
+      }}
+        >
+      </FlatList>
 
 
     </View>

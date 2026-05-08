@@ -2,7 +2,7 @@ import { SafeAreaView, StyleSheet } from 'react-native';
 import CatVoter from './screens/CatVoter';
 
 // Swap the import to switch between screens during the demo:
-// import CatFetcher from './screens/CatFetcher';
+import CatFetcher from './screens/CatFetcher';
 
 export default function App() {
   return (
